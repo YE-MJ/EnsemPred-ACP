@@ -52,7 +52,7 @@ How to run a custom dataset in TXT format with FASTA structure.
 - Place the dataset in the 'data folder' and modify the 'filepath' at 'line 254' in 'test.py' or 'independent.py' before running the script.
 
 If you want to run a simple sequence in FASTA format.
-- Use this [website](http://thegleelab.org/EnsemPred-ACP/) 여기 웹사이트를 이용
+- Use this [website](http://thegleelab.org/EnsemPred-ACP/)
 
 ## Author
 
