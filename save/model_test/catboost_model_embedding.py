@@ -3,9 +3,9 @@ import pandas as pd
 import joblib
 import numpy as np
 
-def catboost_ensemble_enbedding(df1, df2, name1, name2):
-    dataframes = [df1, df2]
-    names = [name1, name2]
+def catboost_ensemble_enbedding(df1, name1):
+    dataframes = [df1]
+    names = [name1]
 
     all_predictions = []
 

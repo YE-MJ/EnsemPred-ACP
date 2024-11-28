@@ -14,7 +14,9 @@ from save.model_test.catboost_model_embedding import catboost_ensemble_enbedding
 from save.model_test.SVM_model_embedding import SVM_ensemble_enbedding
 from Prott5.test.LSTM_ensemble import ensemble_prott5_LSTM
 from ESM2.test.LSTM_ensemble import ensemble_esm_LSTM
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score,  roc_curve
+import matplotlib.pyplot as plt
+
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -127,24 +129,24 @@ def embedding_esm2(name, seq, ems2_tokenizer, esm2_model):
 
 def Result(File, T5_tokenizer, T5_model, ems2_tokenizer, esm2_model, labels):
     Output = {}
-    F1  = {}
+    F1 = {}
     AA = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
 
-    seq_list = [] 
-    accession_list = [] 
-    
+    seq_list = []
+    accession_list = []
+
     AAC_df_tmp = []
     DPC_df_tmp = []
     CKSAAP_df_tmp = []
     T5_df_tmp = []
     esm2_df_tmp = []
-    
+
     for accession, seq in File.items():
         seq = "".join(seq)
-        
+
         seq_list.append(seq)
         accession_list.append(accession)
-        
+
         for val in seq:
             if val not in AA:
                 error_message = f"Sequence contains non-natural amino acids, please provide sequence contains only natural amino acids\nID: {accession}\nSequence: {seq}"
@@ -153,74 +155,92 @@ def Result(File, T5_tokenizer, T5_model, ems2_tokenizer, esm2_model, labels):
 
         AAC_tmp = AAC(accession, seq)
         AAC_df_tmp.append(AAC_tmp)
-        
+
         DPC_tmp = DPC(accession, seq)
         DPC_df_tmp.append(DPC_tmp)
-        
+
         CKSAAP_tmp = CKSAAP(accession, seq)
         CKSAAP_df_tmp.append(CKSAAP_tmp)
-        
+
         T5_tmp = embedding_T5(accession, seq, T5_tokenizer, T5_model)
         T5_df_tmp.append(T5_tmp)
-        
+
         esm2_tmp = embedding_esm2(accession, seq, ems2_tokenizer, esm2_model)
         esm2_df_tmp.append(esm2_tmp)
-        
+
     AAC_df, AAC_name = pd.concat(AAC_df_tmp, axis=0, ignore_index=True), 'AAC'
-    DPC_df, DPC_name  = pd.concat(DPC_df_tmp, axis=0, ignore_index=True), 'DPC'
-    CKSAAP_df, CKSAAP_name  = pd.concat(CKSAAP_df_tmp, axis=0, ignore_index=True), 'CKSAAP'
-    
-    CKSAAP_AAC_df, CKSAAP_AAC_name  = pd.merge(CKSAAP_df, AAC_df, on='SampleName'), 'CKSAAP_AAC'
-    CKSAAP_DPC_df, CKSAAP_DPC_name  = pd.merge(CKSAAP_df, DPC_df, on='SampleName'), 'CKSAAP_DPC'
-    
-    DPC_AAC_df, DPC_AAC_name  = pd.merge(DPC_df, AAC_df, on='SampleName'), 'DPC_AAC'
+    DPC_df, DPC_name = pd.concat(DPC_df_tmp, axis=0, ignore_index=True), 'DPC'
+    CKSAAP_df, CKSAAP_name = pd.concat(CKSAAP_df_tmp, axis=0, ignore_index=True), 'CKSAAP'
+
+    CKSAAP_AAC_df, CKSAAP_AAC_name = pd.merge(CKSAAP_df, AAC_df, on='SampleName'), 'CKSAAP_AAC'
+    CKSAAP_DPC_df, CKSAAP_DPC_name = pd.merge(CKSAAP_df, DPC_df, on='SampleName'), 'CKSAAP_DPC'
+
+    DPC_AAC_df, DPC_AAC_name = pd.merge(DPC_df, AAC_df, on='SampleName'), 'DPC_AAC'
     DPC_CKSAAP_AAC_df, DPC_CKSAAP_AAC_name = pd.merge(DPC_df, CKSAAP_AAC_df, on='SampleName'), 'DPC_CKSAAP_AAC'
-    
+
     T5_df, T5_name = pd.concat(T5_df_tmp, axis=0, ignore_index=True), 'prott5'
     esm2_df, ems2_name = pd.concat(esm2_df_tmp, axis=0, ignore_index=True), 'esm2'
-    
+
     catboost_proba = catboost_ensemble(AAC_df, DPC_df, CKSAAP_df, CKSAAP_AAC_df, CKSAAP_DPC_df, DPC_AAC_df, DPC_CKSAAP_AAC_df,
-                      AAC_name, DPC_name, CKSAAP_name, CKSAAP_AAC_name, CKSAAP_DPC_name, DPC_AAC_name, DPC_CKSAAP_AAC_name)
-    
+                                       AAC_name, DPC_name, CKSAAP_name, CKSAAP_AAC_name, CKSAAP_DPC_name, DPC_AAC_name, DPC_CKSAAP_AAC_name)
+
     gb_proba = gb_ensemble(AAC_df, DPC_df, CKSAAP_df, CKSAAP_AAC_df, CKSAAP_DPC_df, DPC_AAC_df, DPC_CKSAAP_AAC_df,
-                      AAC_name, DPC_name, CKSAAP_name, CKSAAP_AAC_name, CKSAAP_DPC_name, DPC_AAC_name, DPC_CKSAAP_AAC_name)
-    
+                          AAC_name, DPC_name, CKSAAP_name, CKSAAP_AAC_name, CKSAAP_DPC_name, DPC_AAC_name, DPC_CKSAAP_AAC_name)
+
     RF_proba = RF_ensemble(AAC_df, DPC_df, CKSAAP_df, CKSAAP_AAC_df, CKSAAP_DPC_df, DPC_AAC_df, DPC_CKSAAP_AAC_df,
-                      AAC_name, DPC_name, CKSAAP_name, CKSAAP_AAC_name, CKSAAP_DPC_name, DPC_AAC_name, DPC_CKSAAP_AAC_name)
-    
+                          AAC_name, DPC_name, CKSAAP_name, CKSAAP_AAC_name, CKSAAP_DPC_name, DPC_AAC_name, DPC_CKSAAP_AAC_name)
+
     xgboost_proba = xgboost_ensemble(AAC_df, DPC_df, CKSAAP_df, CKSAAP_AAC_df, CKSAAP_DPC_df, DPC_AAC_df, DPC_CKSAAP_AAC_df,
-                      AAC_name, DPC_name, CKSAAP_name, CKSAAP_AAC_name, CKSAAP_DPC_name, DPC_AAC_name, DPC_CKSAAP_AAC_name)
-    
-    catboost_embedding_proba = catboost_ensemble_enbedding(T5_df, esm2_df, T5_name, ems2_name)
-    SVM_embedding_proba = SVM_ensemble_enbedding(T5_df, esm2_df, T5_name, ems2_name)
-    
+                                    AAC_name, DPC_name, CKSAAP_name, CKSAAP_AAC_name, CKSAAP_DPC_name, DPC_AAC_name, DPC_CKSAAP_AAC_name)
+
+    catboost_embedding_proba = catboost_ensemble_enbedding(esm2_df, ems2_name)
+    SVM_embedding_proba = SVM_ensemble_enbedding(esm2_df, ems2_name)
+
     LSTM_prott5_proba = ensemble_prott5_LSTM(T5_df, seq_list)
     LSTM_ems2_proba = ensemble_esm_LSTM(esm2_df, seq_list)
-    
+
     # 앙상블 확률의 평균 계산
     ensemble_proba = np.mean([catboost_proba, gb_proba, RF_proba, xgboost_proba, catboost_embedding_proba, SVM_embedding_proba, LSTM_prott5_proba, LSTM_ems2_proba], axis=0)
 
     # 0.5를 기준으로 이진 분류 수행
     predictions = [1 if proba > 0.5 else 0 for proba in ensemble_proba]
-    
+
     # 성능 지표 계산
     accuracy = accuracy_score(labels, predictions)
     precision = precision_score(labels, predictions)
     recall = recall_score(labels, predictions)
     f1 = f1_score(labels, predictions)
     
+    # Specificity 계산
+    tn = sum((np.array(labels) == 0) & (np.array(predictions) == 0))
+    fp = sum((np.array(labels) == 0) & (np.array(predictions) == 1))
+    specificity = tn / (tn + fp)
+    
     # AUC-ROC 값 계산
     auc_roc = roc_auc_score(labels, ensemble_proba)
+
+    # AUC-ROC 커브 그리기
+    fpr, tpr, _ = roc_curve(labels, ensemble_proba)
+    plt.figure(figsize=(10, 6))
+    plt.plot(fpr, tpr, label=f"AUC-ROC = {auc_roc:.4f}")
+    plt.plot([0, 1], [0, 1], 'r--', label="Random Classifier")
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("AUC-ROC Curve")
+    plt.legend()
+    plt.grid()
+    plt.show()
 
     # 성능 지표 반환
     metrics = {
         'accuracy': accuracy,
         'precision': precision,
         'recall': recall,
+        'specificity': specificity,
         'f1_score': f1,
         'auc_roc': auc_roc
     }
-    
+
     return metrics  # 성능 지표 반환
 
 def load_fasta_file(filepath):
@@ -251,7 +271,7 @@ def load_fasta_file(filepath):
 
 
 def main():
-    filepath = './data/antiCP2_test_ACP_data.txt'
+    filepath = './data/independent_ACP_data.txt'
     
     T5_tokenizer = T5Tokenizer.from_pretrained("Rostlab/prot_t5_xl_half_uniref50-enc", do_lower_case=False)
     T5_model = T5EncoderModel.from_pretrained("Rostlab/prot_t5_xl_half_uniref50-enc")
@@ -269,6 +289,7 @@ def main():
     print(f"Accuracy: {metrics['accuracy']:.4f}")
     print(f"Precision: {metrics['precision']:.4f}")
     print(f"Recall: {metrics['recall']:.4f}")
+    print(f"Specificity: {metrics['specificity']:.4f}")
     print(f"F1 Score: {metrics['f1_score']:.4f}")
     print(f"AUC-ROC: {metrics['auc_roc']:.4f}")
 

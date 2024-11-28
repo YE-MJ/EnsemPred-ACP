@@ -44,7 +44,6 @@ def calculate_binary_profile_features_with_fixed_length(sequence, fixed_length=1
 
 def ensemble_prott5_LSTM(df, seq, fixed_length=1000):
     X_prott5 = df.drop(['SampleName'], axis=1)
-    print(X_prott5.shape)
     sequences = seq
 
     bpf_features_new = [calculate_binary_profile_features_with_fixed_length(s, fixed_length) for s in sequences]

@@ -191,8 +191,8 @@ def Result(File, T5_tokenizer, T5_model, ems2_tokenizer, esm2_model, labels):
     xgboost_proba = xgboost_ensemble(AAC_df, DPC_df, CKSAAP_df, CKSAAP_AAC_df, CKSAAP_DPC_df, DPC_AAC_df, DPC_CKSAAP_AAC_df,
                       AAC_name, DPC_name, CKSAAP_name, CKSAAP_AAC_name, CKSAAP_DPC_name, DPC_AAC_name, DPC_CKSAAP_AAC_name)
     
-    catboost_embedding_proba = catboost_ensemble_enbedding(T5_df, esm2_df, T5_name, ems2_name)
-    SVM_embedding_proba = SVM_ensemble_enbedding(T5_df, esm2_df, T5_name, ems2_name)
+    catboost_embedding_proba = catboost_ensemble_enbedding(esm2_df, ems2_name)
+    SVM_embedding_proba = SVM_ensemble_enbedding(esm2_df, ems2_name)
     
     LSTM_prott5_proba = ensemble_prott5_LSTM(T5_df, seq_list)
     LSTM_ems2_proba = ensemble_esm_LSTM(esm2_df, seq_list)
